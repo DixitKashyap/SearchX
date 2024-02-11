@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">SearchXApp</string>
+    <string name="enter_url">Enter_Url</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search">Search</string>
+    <string name="new_tab">New Tab</string>
+    <string name="history">History</string>
+    <string name="clear_browsing_data">Clear Browsing data</string>
+    <string name="clear_data">Clear data</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="share">Share</string>
+    <string name="go_button">go_button</string>
+    <string name="back">Back</string>
+    <string name="forward">Forward</string>
+    <string name="save">Save</string>
+    <string name="reload">Reload</string>
+    <string name="private_tab">Private Tab</string>
+    <string name="desktop_mode">Desktop Mode</string>
+    <string name="fullscreen_mode">Fullscreen Mode</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="add_to_home_screen">Add To Home Screen</string>
+    <string name="next">Next</string>
+    <string name="enterurl">Enter Url</string>
+</resources>
