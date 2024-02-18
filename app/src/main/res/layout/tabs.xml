@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginHorizontal="5dp"
+    app:cardCornerRadius="15dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="5dp"
+    >
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/tab_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/tabs_icon"
+        android:tint="@color/dark_grey"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="10dp"/>
+
+    <TextView
+        android:id="@+id/tab_name"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/home_tab"
+        android:layout_marginHorizontal="60dp"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:gravity="center_vertical"
+        android:singleLine="true"/>
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/tab_cancel_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/cancel_button_icon"
+        android:tint="@color/dark_grey"
+        android:layout_gravity="center_vertical|end"
+        android:layout_marginHorizontal="10dp"/>
+
+</androidx.cardview.widget.CardView>

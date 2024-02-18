@@ -10,8 +10,9 @@ class HistoryActivity : AppCompatActivity() {
 
     private lateinit var historyBinding: ActivityHistoryBinding
 
+    companion object{
         lateinit var historyList : ArrayList<History>
-        lateinit var mainActivityRef : MainActivity
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

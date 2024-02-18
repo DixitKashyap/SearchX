@@ -26,7 +26,7 @@ import java.io.ByteArrayOutputStream
 import java.lang.Exception
 
 @Suppress("DEPRECATION")
-class BrowserFragment(private val link : String) : Fragment() {
+class BrowserFragment(private val link : String,private val isIngoCognito : Boolean = false) : Fragment() {
 
     lateinit var browserBinding : FragmentBrowserBinding
     lateinit var mainActivityRef : MainActivity
@@ -61,9 +61,16 @@ class BrowserFragment(private val link : String) : Fragment() {
 
         browserBinding.webView.onResume()
 
+        MainActivity.tabList[MainActivity.viewPager.currentItem].name = browserBinding.webView.url.toString()
+        MainActivity.tabBtn.text = MainActivity.tabList.size.toString()
+
         browserBinding.webView?.apply {
             settings.safeBrowsingEnabled = true
-            settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            if(isIngoCognito){
+                settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            }else{
+                settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            }
             settings.javaScriptEnabled = true
             settings.setSupportZoom(true)
             settings.allowFileAccess
@@ -90,6 +97,7 @@ class BrowserFragment(private val link : String) : Fragment() {
                 ) {
                     super.doUpdateVisitedHistory(view, url, isReload)
                     mainActivityRef.mainBinding.searchBar.text = SpannableStringBuilder(url)
+                    MainActivity.tabList[MainActivity.viewPager.currentItem].name = url.toString()
                 }
 
                 //Reseting the Loading Bar to 0
@@ -104,10 +112,14 @@ class BrowserFragment(private val link : String) : Fragment() {
                 //On Page Loading Hiding the progress bar on page on Loaded
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    if(title.isNullOrEmpty()){
-                        dbHelper?.historyDao?.addHistoryItem(History(title = "No Title Found", url = url.toString()))
+                    if(!isIngoCognito){
+                        if(title.isNullOrEmpty()){
+                            dbHelper?.historyDao?.addHistoryItem(History(title = "No Title Found", url = url.toString()))
+                        }else{
+                            dbHelper?.historyDao?.addHistoryItem(History(title = title, url = url.toString()))
+                        }
                     }else{
-                        dbHelper?.historyDao?.addHistoryItem(History(title = title, url = url.toString()))
+
                     }
                     mainActivityRef.mainBinding.progressBar.visibility = View.GONE
                     view?.zoomOut()
@@ -119,7 +131,7 @@ class BrowserFragment(private val link : String) : Fragment() {
 
             //Setting Up Home Button Listener
             mainActivityRef.mainBinding.homeButton.setOnClickListener {
-                MainActivity.tabList.add(HomeFragment())
+                MainActivity.tabList.add(Tabs("Home",HomeFragment()))
                 MainActivity.viewPager.adapter?.notifyDataSetChanged()
                 MainActivity.viewPager.currentItem = MainActivity.tabList.size-1
             }
@@ -209,7 +221,6 @@ class BrowserFragment(private val link : String) : Fragment() {
             this.mCustomViewCallback = callback
             (mainActivityRef.window.decorView as FrameLayout).addView(this.mCustomView,FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT))
             mainActivityRef.window.decorView.systemUiVisibility = 3846
-            Log.d("TAG","Full Screen Mode Entered")
          }
 
         override fun onProgressChanged(view: WebView?, newProgress: Int) {

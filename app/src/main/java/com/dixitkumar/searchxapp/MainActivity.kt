@@ -15,9 +15,11 @@ import android.os.Bundle
 import android.print.PrintAttributes
 import android.print.PrintJob
 import android.print.PrintManager
+import android.speech.AlternativeSpan
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
+import android.webkit.WebStorage
 import android.webkit.WebView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -28,14 +30,17 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.dixitkumar.searchxapp.databinding.ActivityMainBinding
 import com.dixitkumar.searchxapp.databinding.AddBookmarkDialogBinding
 import com.dixitkumar.searchxapp.databinding.MoreOptionMenuBinding
+import com.dixitkumar.searchxapp.databinding.TabsLayoutBinding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textview.MaterialTextView
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.io.ByteArrayOutputStream
@@ -50,7 +55,7 @@ var dbHelper : DbHelper? = null
 class MainActivity : AppCompatActivity() {
 
     companion object{
-        var tabList : ArrayList<Fragment> = ArrayList()
+        var tabList : ArrayList<Tabs> = ArrayList()
         lateinit var viewPager : ViewPager2
         var isDesktopMode = true
         var isFullScreen = false
@@ -59,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         val bookmarkId = "BOOKMARKS"
         val bookmarkKey = "bookmarkList"
         var adapterPostion = -1
+        lateinit var tabBtn : MaterialTextView
     }
      lateinit var mainBinding : ActivityMainBinding
      private var printJob : PrintJob? = null
@@ -82,10 +88,11 @@ class MainActivity : AppCompatActivity() {
         //Initializing The Home Fragment
 
 
-        tabList.add(HomeFragment())
+        tabList.add(Tabs("Home",HomeFragment()))
         mainBinding.viewPager.adapter = FragmentAdapter(supportFragmentManager,lifecycle)
         mainBinding.viewPager.isUserInputEnabled = false
         viewPager = mainBinding.viewPager
+        tabBtn = mainBinding.tabsButton as MaterialTextView
 
 
 
@@ -96,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                 .setTitle("Select Tab")
                 .setMessage("Select One Tab of The Following")
                 .setPositiveButton("Private Tab") { self, _ ->
-                    changeTab("",PrivateTab_Fragment(), isPrivate = true)
+                    changeTab("www.google.com",BrowserFragment("www.google.com",isIngoCognito = true), isPrivate = true)
                     self.dismiss() }
                 .setNeutralButton("Google") { self, _ ->
                     changeTab("https://www.google.com",BrowserFragment("https://www.google.com"))
@@ -119,6 +126,52 @@ class MainActivity : AppCompatActivity() {
         mainBinding.moreOptionButton.setOnClickListener {
             openMoreOptionDialog()
         }
+
+        //Setting Up Tabs Button
+        mainBinding.tabsButton.setOnClickListener {
+           tabManage()
+        }
+    }
+
+
+    //Functioning For Managing Multiple Tabs
+    fun tabManage(){
+        val viewTabs = layoutInflater.inflate(R.layout.tabs_layout,mainBinding.root,false)
+        val tabsLayoutBinding = TabsLayoutBinding.bind(viewTabs)
+
+        val tabsDialog = MaterialAlertDialogBuilder(this).setView(viewTabs)
+            .setTitle("Select Tabs")
+            .setPositiveButton("Home"){self,_->
+                changeTab("Home",HomeFragment())
+                self.dismiss()
+            }.setNeutralButton("Google"){self,_->
+                changeTab("Google",BrowserFragment("www.google.com"))
+                self.dismiss()
+            }
+            .create()
+
+
+        //Setting Up The Recycler View of Tabs Dialog Box
+        tabsLayoutBinding.tabsRecyclerView.setHasFixedSize(true)
+        tabsLayoutBinding.tabsRecyclerView.layoutManager = LinearLayoutManager(this)
+        tabsLayoutBinding.tabsRecyclerView.adapter = Tabs_Adapter(this,tabsDialog)
+
+        //Making Dialog Box Visible
+        tabsDialog.show()
+
+
+        val pBtn = tabsDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        val nBtn = tabsDialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+
+        pBtn.isAllCaps = false
+        nBtn.isAllCaps = false
+
+        pBtn.setTextColor(Color.BLACK)
+        nBtn.setTextColor(Color.BLACK)
+
+        pBtn.setCompoundDrawablesWithIntrinsicBounds(ResourcesCompat.getDrawable(resources,R.drawable.home_icon,theme),null,null,null)
+        nBtn.setCompoundDrawablesWithIntrinsicBounds(ResourcesCompat.getDrawable(resources,R.drawable.add_icon,theme),null,null,null)
+
     }
 
     //Opening Dialog On Click Of  A Button
@@ -126,11 +179,11 @@ class MainActivity : AppCompatActivity() {
     private fun openMoreOptionDialog() {
         try {
             browserRef = tabList[mainBinding.viewPager.currentItem] as BrowserFragment
-        }catch (e : Exception){
+        } catch (e: Exception) {
 
         }
 
-        val view = layoutInflater.inflate(R.layout.more_option_menu,mainBinding.root,false)
+        val view = layoutInflater.inflate(R.layout.more_option_menu, mainBinding.root, false)
         val moreOptionMenuBinding = MoreOptionMenuBinding.bind(view)
 
         val dialog = MaterialAlertDialogBuilder(this).setView(view).create()
@@ -142,25 +195,25 @@ class MainActivity : AppCompatActivity() {
 
         dialog.show()
 
-        if(isFullScreen){
+        if (isFullScreen) {
             moreOptionMenuBinding.fullscreenButton.apply {
                 setIconResource(R.drawable.fullscreen_exit_icon)
             }
         }
 
-        browserRef?.let{
-            if(bookmarkIndex != -1){
+        browserRef?.let {
+            if (bookmarkIndex != -1) {
                 bookmarkIndex = isBookmark(it.browserBinding.webView.url!!)
                 moreOptionMenuBinding.bookmarkButton.apply {
                     setIconTintResource(R.color.light_blue)
-                    setTextColor(ContextCompat.getColor(this@MainActivity,R.color.light_blue))
+                    setTextColor(ContextCompat.getColor(this@MainActivity, R.color.light_blue))
                 }
             }
         }
         //Setting Up Browser Menu's Back Button
         moreOptionMenuBinding.backButton.setOnClickListener {
             browserRef?.let {
-                if(it.browserBinding.webView.canGoBack()){
+                if (it.browserBinding.webView.canGoBack()) {
                     it.browserBinding.webView.goBack()
                 }
             }
@@ -169,7 +222,7 @@ class MainActivity : AppCompatActivity() {
         //Setting Up Browser Menu's Forward Button
         moreOptionMenuBinding.forwardButton.setOnClickListener {
             browserRef?.apply {
-                if(browserBinding.webView.canGoForward()){
+                if (browserBinding.webView.canGoForward()) {
                     browserBinding.webView.goForward()
                 }
             }
@@ -183,25 +236,26 @@ class MainActivity : AppCompatActivity() {
 
         //Setting Up The Save Page Button
         moreOptionMenuBinding.saveButton.setOnClickListener {
-          dialog.dismiss()
-            if(browserRef !=null){
+            dialog.dismiss()
+            if (browserRef != null) {
                 browserRef?.browserBinding?.webView?.let { it1 -> savePage(webpage = it1) }
-            }else{
-                Snackbar.make(mainBinding.root,"First Open A Web Page",Snackbar.LENGTH_LONG).show()
+            } else {
+                Snackbar.make(mainBinding.root, "First Open A Web Page", Snackbar.LENGTH_LONG)
+                    .show()
             }
         }
 
         //Setting Up The Share Web Page Button
         moreOptionMenuBinding.sharePageButton.setOnClickListener {
             dialog.dismiss()
-            if(browserRef != null){
+            if (browserRef != null) {
                 var i = Intent(Intent.ACTION_SEND)
                 i.setType("text/plain");
                 var link = browserRef?.browserBinding?.webView?.url.toString()
-                i.putExtra(Intent.EXTRA_TEXT,"Here is Your Link : \n ${link}")
-                startActivity(Intent.createChooser(i,"Share Url :- "))
-            }else{
-                Snackbar.make(mainBinding.root,"Open A Webpage First!",1500).show()
+                i.putExtra(Intent.EXTRA_TEXT, "Here is Your Link : \n ${link}")
+                startActivity(Intent.createChooser(i, "Share Url :- "))
+            } else {
+                Snackbar.make(mainBinding.root, "Open A Webpage First!", 1500).show()
             }
         }
 
@@ -209,16 +263,20 @@ class MainActivity : AppCompatActivity() {
         moreOptionMenuBinding.desktopModeButton.setOnClickListener {
             it as MaterialButton
             browserRef?.browserBinding?.webView?.apply {
-                if(isDesktopMode){
+                if (isDesktopMode) {
                     settings.userAgentString = null
                     reload()
                     isDesktopMode = false
                     Log.d("TAG", isDesktopMode.toString())
-                }else{
-                    settings.userAgentString =  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0"
+                } else {
+                    settings.userAgentString =
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0"
                     settings.useWideViewPort = true
-                    evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
-                            " 'width=1024px, initial-scale=' + (document.documentElement.clientWidth / 1024));", null)
+                    evaluateJavascript(
+                        "document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
+                                " 'width=1024px, initial-scale=' + (document.documentElement.clientWidth / 1024));",
+                        null
+                    )
 
                     reload()
                     isDesktopMode = true
@@ -227,16 +285,17 @@ class MainActivity : AppCompatActivity() {
                 reload()
                 dialog.dismiss()
             }
+
         }
 
         //Setting Up Listener on FullScreen Mode Button
         moreOptionMenuBinding.fullscreenButton.setOnClickListener {
             it as MaterialButton
-            if(!isFullScreen){
+            if (!isFullScreen) {
                 changeFullScreen(enable = true)
                 it.setIconResource(R.drawable.fullscreen_exit_icon)
                 isFullScreen = true
-            }else{
+            } else {
                 changeFullScreen(enable = false)
                 it.setIconResource(R.drawable.fullscreen_icon)
                 isFullScreen = false
@@ -244,137 +303,203 @@ class MainActivity : AppCompatActivity() {
         }
         //Setting Up Listener on History Button
         moreOptionMenuBinding.HistoryButton.setOnClickListener {
-            startActivity(Intent(this@MainActivity,HistoryActivity::class.java))
+            startActivity(Intent(this@MainActivity, HistoryActivity::class.java))
         }
 
-        //Setting Up Listener of BookMark Button
-        moreOptionMenuBinding.bookmarkButton.setOnClickListener {
-            browserRef?.let{
-                if(bookmarkIndex == -1){
-                    val view = layoutInflater.inflate(R.layout.add_bookmark_dialog,mainBinding.root,false)
-                    val bBinding = AddBookmarkDialogBinding.bind(view)
+        //Clearing Browser All Data On Click of A Button
+        moreOptionMenuBinding.clearHistory.setOnClickListener {
+            browserRef?.browserBinding?.webView?.apply {
 
-                    val BookmarkDialog  = MaterialAlertDialogBuilder(this).setView(view)
-                        .setTitle("Add Bookmark")
-                        .setMessage("Url : ${it.browserBinding.webView.url!!}")
-                        .setPositiveButton("Add"){self, _->
-                            try{
-                                val array = ByteArrayOutputStream()
-                                it.favicon!!.compress(Bitmap.CompressFormat.PNG,100,array)
-                                bookmarkList.add(Bookmark(name = bBinding.bookmarkTitle.text.toString(), url = it.browserBinding.webView.url!!,array.toByteArray()))
-                            }catch (e : Exception){
-                                bookmarkList.add(
-                                    Bookmark(name = bBinding.bookmarkTitle.text.toString(),
-                                             url = it.browserBinding.webView.url!!))
-                            }
-                            self.dismiss()
-                        }
-                        .setNegativeButton("Cancel"){self , _ ->
-                            self.dismiss()
-                        }.create()
-
-                    BookmarkDialog.setOnShowListener{
-                        val positiveButton = BookmarkDialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                        val negativeButton = BookmarkDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-
-                        positiveButton.setTextColor(R.color.black)
-                        negativeButton.setTextColor(R.color.black)
+                val alterDialog = MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle("Clear All Data")
+                    .setMessage("Do You Really Want to Delete :-\nCache Data\nHistory\nCookies")
+                    .setPositiveButton("No") { self, _ ->
+                        self.dismiss()
                     }
+                    .setNeutralButton("Clear") { self, _ ->
+                        clearMatches()
+                        clearHistory()
+                        clearFormData()
+                        clearSslPreferences()
+                        clearCache(true)
+                        android.webkit.CookieManager.getInstance().removeAllCookie()
 
-                    BookmarkDialog.show()
-                    bBinding.bookmarkTitle.setText(it.browserBinding.webView.title)
-                }else{
-                    val dialogB = MaterialAlertDialogBuilder(this)
-                        .setTitle("Remove Bookmark")
-                        .setMessage("Url : ${it.browserBinding.webView.url}")
-                        .setPositiveButton("Remove"){self, _->
-                            if(adapterPostion != -1){
-                                bookmarkList.removeAt(adapterPostion)
-                                val editor = getSharedPreferences(bookmarkId, MODE_PRIVATE).edit()
-                                val data = GsonBuilder().create().toJson(bookmarkList)
-                                editor.putString(bookmarkKey,data)
-                                editor.apply()
+                        WebStorage.getInstance().deleteAllData()
+                        dbHelper?.clearAllTables()
+                        Snackbar.make(mainBinding.root,"Data Deleted",2000).show()
+                        self.dismiss()
+                    }
+                    .create()
+                alterDialog.setOnShowListener {
+                    val positiveButton = alterDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    val negativeButton = alterDialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+
+                    positiveButton.setTextColor(Color.BLACK)
+                    negativeButton.setTextColor(Color.BLACK)
+                }
+                    alterDialog.show()
+
+            }
+        }
+
+            //Setting Up Listener of BookMark Button
+            moreOptionMenuBinding.bookmarkButton.setOnClickListener {
+                browserRef?.let {
+                    if (bookmarkIndex == -1) {
+                        val view = layoutInflater.inflate(
+                            R.layout.add_bookmark_dialog,
+                            mainBinding.root,
+                            false
+                        )
+                        val bBinding = AddBookmarkDialogBinding.bind(view)
+
+                        val BookmarkDialog = MaterialAlertDialogBuilder(this).setView(view)
+                            .setTitle("Add Bookmark")
+                            .setMessage("Url : ${it.browserBinding.webView.url!!}")
+                            .setPositiveButton("Add") { self, _ ->
+                                try {
+                                    val array = ByteArrayOutputStream()
+                                    it.favicon!!.compress(Bitmap.CompressFormat.PNG, 100, array)
+                                    bookmarkList.add(
+                                        Bookmark(
+                                            name = bBinding.bookmarkTitle.text.toString(),
+                                            url = it.browserBinding.webView.url!!,
+                                            array.toByteArray()
+                                        )
+                                    )
+                                } catch (e: Exception) {
+                                    bookmarkList.add(
+                                        Bookmark(
+                                            name = bBinding.bookmarkTitle.text.toString(),
+                                            url = it.browserBinding.webView.url!!
+                                        )
+                                    )
+                                }
                                 self.dismiss()
                             }
-                        }
-                        .setNegativeButton("Cancel"){self,_->
-                            self.dismiss()
-                        }
-                        .create()
+                            .setNegativeButton("Cancel") { self, _ ->
+                                self.dismiss()
+                            }.create()
 
-                    dialogB.setOnShowListener {
-                        val positiveButton = dialogB.getButton(AlertDialog.BUTTON_POSITIVE)
-                        val negativeButton = dialogB.getButton(AlertDialog.BUTTON_NEGATIVE)
+                        BookmarkDialog.setOnShowListener {
+                            val positiveButton =
+                                BookmarkDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                            val negativeButton =
+                                BookmarkDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
 
-                        positiveButton.setTextColor(Color.BLACK)
-                        negativeButton.setTextColor(Color.BLACK)
+                            positiveButton.setTextColor(R.color.black)
+                            negativeButton.setTextColor(R.color.black)
+                        }
+
+                        BookmarkDialog.show()
+                        bBinding.bookmarkTitle.setText(it.browserBinding.webView.title)
+                    } else {
+                        val dialogB = MaterialAlertDialogBuilder(this)
+                            .setTitle("Remove Bookmark")
+                            .setMessage("Url : ${it.browserBinding.webView.url}")
+                            .setPositiveButton("Remove") { self, _ ->
+                                if (adapterPostion != -1) {
+                                    bookmarkList.removeAt(adapterPostion)
+                                    val editor =
+                                        getSharedPreferences(bookmarkId, MODE_PRIVATE).edit()
+                                    val data = GsonBuilder().create().toJson(bookmarkList)
+                                    editor.putString(bookmarkKey, data)
+                                    editor.apply()
+                                    self.dismiss()
+                                }
+                            }
+                            .setNegativeButton("Cancel") { self, _ ->
+                                self.dismiss()
+                            }
+                            .create()
+
+                        dialogB.setOnShowListener {
+                            val positiveButton = dialogB.getButton(AlertDialog.BUTTON_POSITIVE)
+                            val negativeButton = dialogB.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+                            positiveButton.setTextColor(Color.BLACK)
+                            negativeButton.setTextColor(Color.BLACK)
+                        }
+
+                        dialogB.show()
                     }
+                }
+                dialog.dismiss()
+            }
+        }
 
-                    dialogB.show()
+        private fun changeFullScreen(enable: Boolean) {
+            if (enable) {
+                WindowCompat.setDecorFitsSystemWindows(window, false)
+                WindowInsetsControllerCompat(window, mainBinding.root).let {
+                    it.hide(WindowInsetsCompat.Type.systemBars())
+                    it.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                WindowCompat.setDecorFitsSystemWindows(window, true)
+                WindowInsetsControllerCompat(
+                    window,
+                    mainBinding.root
+                ).show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+
+
+        //For Saving Web Page
+        private fun savePage(webpage: WebView) {
+            val printManager = getSystemService(Context.PRINT_SERVICE) as PrintManager
+
+            val jobName = "${URL(webpage.url).host}_${
+                SimpleDateFormat("HH:mm d_MM-yy", Locale.ENGLISH)
+                    .format(Calendar.getInstance().time)
+            }"
+            val printAdapter = webpage.createPrintDocumentAdapter(jobName)
+            val printAttributes = PrintAttributes.Builder()
+            printJob = printManager.print(jobName, printAdapter, printAttributes.build())
+        }
+
+        override fun onResume() {
+            super.onResume()
+            printJob?.let {
+                when {
+                    it.isCompleted -> Snackbar.make(
+                        mainBinding.root,
+                        "Page Downloaded Complete -> ${it.info.label}",
+                        1500
+                    ).show()
+
+                    it.isFailed -> Snackbar.make(
+                        mainBinding.root,
+                        "Page Downloading Failed ->${it.info.label} ",
+                        1500
+                    ).show()
                 }
             }
-            dialog.dismiss()
-        }
-    }
-
-    private fun changeFullScreen(enable : Boolean){
-        if(enable) {
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-            WindowInsetsControllerCompat(window, mainBinding.root).let {
-                it.hide(WindowInsetsCompat.Type.systemBars())
-                it.systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        }else{
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-            WindowInsetsControllerCompat(window, mainBinding.root).show(WindowInsetsCompat.Type.systemBars())
-            }
         }
 
+        override fun onBackPressed() {
+            var browserRef: BrowserFragment? = null
+            try {
+                browserRef = tabList[mainBinding.viewPager.currentItem] as BrowserFragment
+            } catch (e: Exception) {
 
-    //For Saving Web Page
-    private fun savePage(webpage : WebView){
-        val printManager = getSystemService(Context.PRINT_SERVICE) as PrintManager
-
-        val jobName = "${URL(webpage.url).host}_${SimpleDateFormat("HH:mm d_MM-yy", Locale.ENGLISH)
-            .format(Calendar.getInstance().time)}"
-        val printAdapter = webpage.createPrintDocumentAdapter(jobName)
-        val printAttributes = PrintAttributes.Builder()
-        printJob = printManager.print(jobName,printAdapter,printAttributes.build())
-    }
-
-    override fun onResume() {
-        super.onResume()
-        printJob?.let {
-            when{
-                it.isCompleted -> Snackbar.make(mainBinding.root,"Page Downloaded Complete -> ${it.info.label}",1500).show()
-                it.isFailed -> Snackbar.make(mainBinding.root,"Page Downloading Failed ->${it.info.label} ",1500).show()
-            }
-        }
-    }
-
-    override fun onBackPressed() {
-       var browserRef : BrowserFragment? = null
-        try{
-            browserRef = tabList[mainBinding.viewPager.currentItem] as BrowserFragment
-        }catch (e : Exception){
-
-        }
-
-        when{
-            browserRef?.browserBinding?.webView?.canGoBack()  == true ->{
-                browserRef.browserBinding.webView.goBack()
             }
 
-            mainBinding.viewPager.currentItem!=0->{
-                tabList.removeAt(mainBinding.viewPager.currentItem)
-                mainBinding.viewPager.adapter?.notifyDataSetChanged()
-                mainBinding.viewPager.currentItem = tabList.size-1
-            }
+            when {
+                browserRef?.browserBinding?.webView?.canGoBack() == true -> {
+                    browserRef.browserBinding.webView.goBack()
+                }
 
-            else -> super.onBackPressed()
+                mainBinding.viewPager.currentItem != 0 -> {
+                    tabList.removeAt(mainBinding.viewPager.currentItem)
+                    mainBinding.viewPager.adapter?.notifyDataSetChanged()
+                    mainBinding.viewPager.currentItem = tabList.size - 1
+                }
+
+                else -> super.onBackPressed()
+            }
         }
-    }
 
     class FragmentAdapter(fr : FragmentManager,lc: Lifecycle) : FragmentStateAdapter(fr,lc){
         override fun getItemCount(): Int {
@@ -382,7 +507,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun createFragment(position: Int): Fragment {
-           return tabList[position]
+           return tabList[position].fragment
         }
 
     }
@@ -430,9 +555,10 @@ fun checkNetwork(context : Context) : Boolean{
         return networkInfo.isConnected
     }
 }
-fun changeTab(url: String , fragment: Fragment, isPrivate : Boolean = false){
-            MainActivity.tabList.add(BrowserFragment(url))
+fun changeTab(url: String , fragment: Fragment,isPrivate : Boolean = false){
+            MainActivity.tabList.add(Tabs(name = url,fragment=fragment))
             MainActivity.viewPager.adapter?.notifyDataSetChanged()
+            MainActivity.tabBtn.text = MainActivity.tabList.size.toString()
             MainActivity.viewPager.currentItem = MainActivity.tabList.size-1
 
 }

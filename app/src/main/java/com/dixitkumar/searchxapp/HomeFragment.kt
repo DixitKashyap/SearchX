@@ -28,8 +28,10 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
 
-        mainActivityRef = requireActivity() as MainActivity
         homeBinding = FragmentHomeBinding.inflate(layoutInflater)
+        mainActivityRef = requireActivity() as MainActivity
+
+
 
 //        homeBinding.searchView.setOnQueryTextListener()
         return homeBinding.root
@@ -38,6 +40,8 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
+        MainActivity.tabList[MainActivity.viewPager.currentItem].name = "Home"
+        MainActivity.tabBtn.text = MainActivity.tabList.size.toString()
         //setting up the listener of search button
         mainActivityRef.mainBinding.searchBar.setText("")
         homeBinding.searchView.setQuery("",false)
@@ -71,7 +75,7 @@ class HomeFragment : Fragment() {
 
         //Setting Up Home Button Listener
         mainActivityRef.mainBinding.homeButton.setOnClickListener {
-            MainActivity.tabList.add(HomeFragment())
+            MainActivity.tabList.add(Tabs("Home",HomeFragment()))
             MainActivity.viewPager.adapter?.notifyDataSetChanged()
             MainActivity.viewPager.currentItem = MainActivity.tabList.size-1
         }

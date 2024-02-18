@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.dixitkumar.searchxapp.databinding.HistoryItemBinding
 import com.google.android.material.snackbar.Snackbar
 
-class historyAdapter(val context : Context,val historyList : ArrayList<History>) : RecyclerView.Adapter<historyAdapter.ViewHolder>() {
+class historyAdapter(val context : Context, var historyList : ArrayList<History>) : RecyclerView.Adapter<historyAdapter.ViewHolder>() {
 
     private val color = context.resources.getIntArray(R.array.randomColor)
     inner class ViewHolder(history: HistoryItemBinding)
@@ -16,7 +16,8 @@ class historyAdapter(val context : Context,val historyList : ArrayList<History>)
             var icon = history.HistoryIcon
             var title = history.historyWebTitle
             var url = history.historyWebUrl
-            var root = history.root
+            var delete = history.deleteHistoryItem
+            var root = history.parentLayout
         }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -37,6 +38,7 @@ class historyAdapter(val context : Context,val historyList : ArrayList<History>)
         holder.url.text  = historyList[position].url
 
         holder.root.setOnClickListener {
+
             when{
                 checkNetwork(context) ->{
                     MainActivity.adapterPostion = position
@@ -49,6 +51,13 @@ class historyAdapter(val context : Context,val historyList : ArrayList<History>)
                 else -> Snackbar.make(holder.root,"Internet is not Connected",500).show()
             }
 
+        }
+
+        //Setting Up Listener on delete History Item Button
+        holder.delete.setOnClickListener {
+            dbHelper?.historyDao?.deleteHistoryItem(historyList[position])
+            notifyDataSetChanged()
+            historyList.removeAt(position)
         }
     }
 }
