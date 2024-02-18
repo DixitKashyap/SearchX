@@ -28,6 +28,7 @@
             android:textStyle="bold"
             app:iconTint="@color/black">
         </com.google.android.material.button.MaterialButton>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/desktop_mode_button"
             android:layout_width="0dp"

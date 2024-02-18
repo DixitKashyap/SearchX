@@ -1,5 +1,6 @@
 package com.dixitkumar.searchxapp
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -9,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.SearchView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import com.dixitkumar.searchxapp.databinding.FragmentHomeBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -73,6 +75,22 @@ class HomeFragment : Fragment() {
             MainActivity.viewPager.adapter?.notifyDataSetChanged()
             MainActivity.viewPager.currentItem = MainActivity.tabList.size-1
         }
+
+        //Setting Up The Bookmark Recycler View
+        homeBinding.rvBookmark.setHasFixedSize(true)
+        homeBinding.rvBookmark.setItemViewCacheSize(5)
+        homeBinding.rvBookmark.layoutManager = GridLayoutManager(requireContext(),5)
+        homeBinding.rvBookmark.adapter = BookmarkAdapter(requireContext())
+
+
+        if(MainActivity.bookmarkList.size<1){
+            homeBinding.allbookmarks.visibility = View.GONE
+        }else{
+            homeBinding.allbookmarks.setOnClickListener{
+                startActivity(Intent(requireContext(),Bookmark_activity::class.java))
+            }
+        }
+
     }
 }
 

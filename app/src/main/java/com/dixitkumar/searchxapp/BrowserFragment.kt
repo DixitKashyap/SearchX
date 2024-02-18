@@ -7,11 +7,11 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.text.SpannableStringBuilder
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsetsController
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -22,19 +22,24 @@ import androidx.annotation.RequiresApi
 import androidx.core.view.WindowInsetsControllerCompat
 import com.dixitkumar.searchxapp.databinding.FragmentBrowserBinding
 import com.google.android.material.snackbar.Snackbar
+import java.io.ByteArrayOutputStream
 import java.lang.Exception
 
+@Suppress("DEPRECATION")
 class BrowserFragment(private val link : String) : Fragment() {
 
     lateinit var browserBinding : FragmentBrowserBinding
     lateinit var mainActivityRef : MainActivity
     var favicon : Bitmap? = null
 
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         browserBinding = FragmentBrowserBinding.inflate(layoutInflater)
+
+
 
         //Getting Reference of the Main Activity
         mainActivityRef = requireActivity() as MainActivity
@@ -95,9 +100,15 @@ class BrowserFragment(private val link : String) : Fragment() {
                 }
 
 
+
                 //On Page Loading Hiding the progress bar on page on Loaded
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    if(title.isNullOrEmpty()){
+                        dbHelper?.historyDao?.addHistoryItem(History(title = "No Title Found", url = url.toString()))
+                    }else{
+                        dbHelper?.historyDao?.addHistoryItem(History(title = title, url = url.toString()))
+                    }
                     mainActivityRef.mainBinding.progressBar.visibility = View.GONE
                     view?.zoomOut()
                 }
@@ -115,6 +126,11 @@ class BrowserFragment(private val link : String) : Fragment() {
 
         }
 
+        //Setting Up The Touch Event False
+        browserBinding.webView.setOnTouchListener{ _, motionEven ->
+            mainActivityRef.mainBinding.root.onTouchEvent(motionEven)
+            return@setOnTouchListener false
+        }
         mainActivityRef.mainBinding.searchButton.setOnClickListener {
             if(checkNetwork(requireContext())){
                 changeTab(mainActivityRef.mainBinding.searchBar.text.toString(),
@@ -147,6 +163,13 @@ class BrowserFragment(private val link : String) : Fragment() {
                 mainActivityRef.mainBinding.websiteIcon.setImageBitmap(icon)
                 favicon = icon
 
+                MainActivity.bookmarkIndex = mainActivityRef.isBookmark(view?.url!!)
+                if(MainActivity.bookmarkIndex != -1) {
+                    val array = ByteArrayOutputStream()
+                    icon!!.compress(Bitmap.CompressFormat.PNG, 100, array)
+                    MainActivity.bookmarkList[MainActivity.bookmarkIndex].image =
+                        array.toByteArray()
+                }
             }catch (e : Exception){
 
             }
@@ -186,6 +209,7 @@ class BrowserFragment(private val link : String) : Fragment() {
             this.mCustomViewCallback = callback
             (mainActivityRef.window.decorView as FrameLayout).addView(this.mCustomView,FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT))
             mainActivityRef.window.decorView.systemUiVisibility = 3846
+            Log.d("TAG","Full Screen Mode Entered")
          }
 
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -197,5 +221,7 @@ class BrowserFragment(private val link : String) : Fragment() {
     override fun onPause() {
         browserBinding.webView.reload()
         super.onPause()
+        mainActivityRef.saveBookmark()
+
     }
 }

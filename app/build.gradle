@@ -1,16 +1,17 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
 }
 
 android {
     namespace 'com.dixitkumar.searchxapp'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.dixitkumar.searchxapp"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -24,11 +25,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
     buildFeatures{
         viewBinding true
@@ -47,4 +48,12 @@ dependencies {
 
     //adding lottie animation dependency
         implementation 'com.airbnb.android:lottie:6.3.0'
+
+    //for storing custom object in shared preferences
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+    //room library
+    def room_version = "2.6.1"
+    implementation "androidx.room:room-ktx:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
 }

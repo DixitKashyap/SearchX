@@ -8,4 +8,30 @@
     <color name="yellow_note_dull">#F7D88B</color>
     <color name="dark_grey">#636161</color>
     <color name="greyish_blue">#C5D4DD</color>
+    <color name="dull_Green">#6B8E23</color>
+    <color name="red_bright">#FF4500</color>
+    <color name="light_green">#ADFF2F</color>
+    <color name="light_yellow">#FFD700</color>
+    <color name="purple">#4B0082</color>
+    <color name="light_skyblue">#ADD8E6</color>
+    <color name="dull_red">#F08080</color>
+    <color name="greenish_blue">#20B2AA</color>
+
+    <integer-array name="randomColor">
+        <item>@color/black</item>
+        <item>@color/light_blue</item>
+        <item>@color/yellow_note</item>
+        <item>@color/yellow_note_dull</item>
+        <item>@color/dark_grey</item>
+        <item>@color/greyish_blue</item>
+        <item>@color/dull_Green</item>
+        <item>@color/red_bright</item>
+        <item>@color/light_green</item>
+        <item>@color/light_yellow</item>
+        <item>@color/purple</item>
+        <item>@color/light_skyblue</item>
+        <item>@color/dull_red</item>
+        <item>@color/greenish_blue</item>
+
+    </integer-array>
 </resources>
