@@ -1,8 +1,11 @@
 package com.dixitkumar.searchxapp
 
+import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.speech.RecognizerIntent
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +18,7 @@ import com.dixitkumar.searchxapp.databinding.FragmentHomeBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 
+@Suppress("DEPRECATION")
 class HomeFragment : Fragment() {
 
     //reference of home fragment
@@ -22,6 +26,8 @@ class HomeFragment : Fragment() {
 
     //Getting a Reference of Main Activity
     private lateinit var mainActivityRef : MainActivity
+    private var RequestCode = 111
+    lateinit var searchedQuery : String
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -95,6 +101,28 @@ class HomeFragment : Fragment() {
             }
         }
 
+        //Setting Up Speech to text
+        homeBinding.voiceSearch.setOnClickListener {
+            speakUp()
+        }
+
+    }
+
+    fun speakUp(){
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,3000)
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"Start Speaking....")
+        startActivityForResult(intent,RequestCode)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if(requestCode == RequestCode && resultCode == RESULT_OK)
+            searchedQuery = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0).toString()
+          homeBinding.searchView.setQuery(searchedQuery,true)
     }
 }
 

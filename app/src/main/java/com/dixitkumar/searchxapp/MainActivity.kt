@@ -178,7 +178,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("ResourceAsColor", "ResourceType")
     private fun openMoreOptionDialog() {
         try {
-            browserRef = tabList[mainBinding.viewPager.currentItem] as BrowserFragment
+            browserRef = tabList[mainBinding.viewPager.currentItem].fragment as BrowserFragment
         } catch (e: Exception) {
 
         }
@@ -555,10 +555,12 @@ fun checkNetwork(context : Context) : Boolean{
         return networkInfo.isConnected
     }
 }
-fun changeTab(url: String , fragment: Fragment,isPrivate : Boolean = false){
+fun changeTab(url: String , fragment: Fragment,isPrivate : Boolean = false,isBackround : Boolean = false){
             MainActivity.tabList.add(Tabs(name = url,fragment=fragment))
             MainActivity.viewPager.adapter?.notifyDataSetChanged()
             MainActivity.tabBtn.text = MainActivity.tabList.size.toString()
-            MainActivity.viewPager.currentItem = MainActivity.tabList.size-1
 
+    if(!isBackround) {
+        MainActivity.viewPager.currentItem = MainActivity.tabList.size - 1
+    }
 }

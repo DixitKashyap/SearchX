@@ -17,6 +17,7 @@
         android:layout_height="40dp"
         android:src="@drawable/tabs_icon"
         android:tint="@color/dark_grey"
+        android:scaleType="center"
         android:layout_gravity="center_vertical"
         android:layout_marginHorizontal="10dp"/>
 
@@ -35,6 +36,7 @@
         android:id="@+id/tab_cancel_button"
         android:layout_width="40dp"
         android:layout_height="40dp"
+        android:scaleType="centerInside"
         android:src="@drawable/cancel_button_icon"
         android:tint="@color/dark_grey"
         android:layout_gravity="center_vertical|end"
