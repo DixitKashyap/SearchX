@@ -30,8 +30,6 @@ width= 45% height = 30%/>
 width= 45% height = 30%/>
 <img src = "https://github.com/DixitKashyap/SearchX/blob/main/Screenshots/Screenshot_13.jpg"
 width= 45% height = 30%/>
-<img src = "https://github.com/DixitKashyap/SearchX/blob/main/Screenshots/Screenshot_14.jpg"
-width= 45% height = 30%/>
 <img src = "https://github.com/DixitKashyap/SearchX/blob/main/Screenshots/Screenshot_8.jpg"
 width=100% height=50%/>
 </br>
